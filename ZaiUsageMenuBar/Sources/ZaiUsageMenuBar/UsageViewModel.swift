@@ -25,7 +25,7 @@ class UsageViewModel: ObservableObject {
                 self.lastUpdated = usageData.lastUpdated
                 self.error = nil
                 
-                let tokenLimit = usageData.quotaLimits.limits.first { $0.type == "TOKENS_LIMIT" }
+                let tokenLimit = usageData.quotaLimits.limits?.first { $0.type == "TOKENS_LIMIT" }
                 AppDelegate.shared?.updateStatusItem(percentage: tokenLimit?.percentage)
             } catch {
                 self.error = error.localizedDescription

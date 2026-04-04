@@ -8,10 +8,10 @@ struct APIResponse<T: Codable>: Codable {
 }
 
 struct ModelUsageData: Codable {
-    let xTime: [String]
-    let modelCallCount: [Int?]
-    let tokensUsage: [Int?]
-    let totalUsage: ModelUsageTotal
+    let xTime: [String]?
+    let modelCallCount: [Int?]?
+    let tokensUsage: [Int?]?
+    let totalUsage: ModelUsageTotal?
     
     enum CodingKeys: String, CodingKey {
         case xTime = "x_time"
@@ -22,13 +22,13 @@ struct ModelUsageData: Codable {
 }
 
 struct ModelUsageTotal: Codable {
-    let totalModelCallCount: Int
-    let totalTokensUsage: Int
+    let totalModelCallCount: Int?
+    let totalTokensUsage: Int?
 }
 
 struct ToolUsageData: Codable {
-    let xTime: [String]
-    let totalUsage: ToolUsageTotal
+    let xTime: [String]?
+    let totalUsage: ToolUsageTotal?
     
     enum CodingKeys: String, CodingKey {
         case xTime = "x_time"
@@ -37,36 +37,36 @@ struct ToolUsageData: Codable {
 }
 
 struct ToolUsageTotal: Codable {
-    let totalNetworkSearchCount: Int
-    let totalWebReadMcpCount: Int
-    let totalZreadMcpCount: Int
-    let totalSearchMcpCount: Int
-    let toolDetails: [ToolDetail]
+    let totalNetworkSearchCount: Int?
+    let totalWebReadMcpCount: Int?
+    let totalZreadMcpCount: Int?
+    let totalSearchMcpCount: Int?
+    let toolDetails: [ToolDetail]?
 }
 
-struct ToolDetail: Codable {
-    let modelName: String
-    let totalUsageCount: Int
+struct ToolDetail: Codable, Hashable {
+    let modelName: String?
+    let totalUsageCount: Int?
 }
 
 struct QuotaLimitData: Codable {
-    let limits: [QuotaLimit]
-    let level: String
+    let limits: [QuotaLimit]?
+    let level: String?
 }
 
 struct QuotaLimit: Codable {
-    let type: String
-    let unit: Int
-    let number: Int
+    let type: String?
+    let unit: Int?
+    let number: Int?
     let usage: Double?
     let currentValue: Double?
     let remaining: Double?
-    let percentage: Double
-    let nextResetTime: TimeInterval
+    let percentage: Double?
+    let nextResetTime: TimeInterval?
     let usageDetails: [UsageDetail]?
 }
 
 struct UsageDetail: Codable {
-    let modelCode: String
-    let usage: Double
+    let modelCode: String?
+    let usage: Double?
 }

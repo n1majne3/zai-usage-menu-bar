@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    static var shared: AppDelegate!
+    static var shared: AppDelegate?
     
     var statusItem: NSStatusItem!
     var popover = NSPopover()
@@ -23,9 +23,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: contentView)
         
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in
+        refreshTimer = Timer(timeInterval: 300, repeats: true) { _ in
             NotificationCenter.default.post(name: .refreshUsage, object: nil)
         }
+        RunLoop.main.add(refreshTimer!, forMode: .common)
     }
     
     func updateStatusItem(percentage: Double?) {

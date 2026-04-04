@@ -16,7 +16,9 @@ class UsageAPIClient {
         
         let now = Date()
         let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!
+        guard let startDate = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now)) else {
+            throw UsageError.invalidDate
+        }
         let endDate = now
         
         let startComponents = calendar.dateComponents([.year, .month, .day, .hour], from: startDate)
@@ -33,9 +35,27 @@ class UsageAPIClient {
         
         let (modelUsageRaw, toolUsageRaw, quotaLimitRaw) = try await (modelUsageTask, toolUsageTask, quotaLimitTask)
         
-        let modelUsageResponse = try JSONDecoder().decode(APIResponse<ModelUsageData>.self, from: modelUsageRaw)
-        let toolUsageResponse = try JSONDecoder().decode(APIResponse<ToolUsageData>.self, from: toolUsageRaw)
-        let quotaLimitResponse = try JSONDecoder().decode(APIResponse<QuotaLimitData>.self, from: quotaLimitRaw)
+        let modelUsageResponse: APIResponse<ModelUsageData>
+        let toolUsageResponse: APIResponse<ToolUsageData>
+        let quotaLimitResponse: APIResponse<QuotaLimitData>
+        
+        do {
+            modelUsageResponse = try JSONDecoder().decode(APIResponse<ModelUsageData>.self, from: modelUsageRaw)
+        } catch {
+            throw UsageError.decodeError(endpoint: "model-usage", rawJSON: modelUsageRaw, underlying: error)
+        }
+        
+        do {
+            toolUsageResponse = try JSONDecoder().decode(APIResponse<ToolUsageData>.self, from: toolUsageRaw)
+        } catch {
+            throw UsageError.decodeError(endpoint: "tool-usage", rawJSON: toolUsageRaw, underlying: error)
+        }
+        
+        do {
+            quotaLimitResponse = try JSONDecoder().decode(APIResponse<QuotaLimitData>.self, from: quotaLimitRaw)
+        } catch {
+            throw UsageError.decodeError(endpoint: "quota-limit", rawJSON: quotaLimitRaw, underlying: error)
+        }
         
         return UsageData(
             modelUsage: modelUsageResponse.data,
@@ -46,7 +66,9 @@ class UsageAPIClient {
     }
     
     private func fetchJSON(url: String, startTime: String?, endTime: String?, authToken: String) async throws -> Data {
-        var components = URLComponents(string: url)!
+        guard var components = URLComponents(string: url) else {
+            throw UsageError.invalidURL
+        }
         
         if let startTime = startTime, let endTime = endTime {
             components.queryItems = [
@@ -90,7 +112,9 @@ enum UsageError: Error, LocalizedError {
     case missingAuthToken
     case invalidURL
     case invalidResponse
+    case invalidDate
     case httpError(statusCode: Int, data: Data)
+    case decodeError(endpoint: String, rawJSON: Data, underlying: Error)
     
     var errorDescription: String? {
         switch self {
@@ -100,11 +124,18 @@ enum UsageError: Error, LocalizedError {
             return "Invalid URL."
         case .invalidResponse:
             return "Invalid response from server."
+        case .invalidDate:
+            return "Invalid date calculation."
         case .httpError(let statusCode, let data):
             if let errorMessage = String(data: data, encoding: .utf8) {
                 return "HTTP Error \(statusCode): \(errorMessage)"
             }
             return "HTTP Error \(statusCode)"
+        case .decodeError(let endpoint, let rawJSON, let underlying):
+            if let jsonString = String(data: rawJSON, encoding: .utf8) {
+                return "Failed to decode \(endpoint) response: \(underlying.localizedDescription)\n\nRaw JSON:\n\(jsonString)"
+            }
+            return "Failed to decode \(endpoint) response: \(underlying.localizedDescription)"
         }
     }
 }

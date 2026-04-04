@@ -46,7 +46,7 @@ async function fetchEndpoint(url, withParams = true) {
       path: parsedUrl.pathname + parsedUrl.search,
       method: 'GET',
       headers: {
-        'Authorization': authToken,
+        'Authorization': `Bearer ${authToken}`,
         'Accept-Language': 'en-US,en',
         'Content-Type': 'application/json'
       }

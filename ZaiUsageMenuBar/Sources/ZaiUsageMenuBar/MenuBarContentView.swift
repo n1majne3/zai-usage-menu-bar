@@ -124,11 +124,11 @@ struct QuotaLimitsView: View {
     let quotaData: QuotaLimitData
     
     var tokenLimit: QuotaLimit? {
-        quotaData.limits.first { $0.type == "TOKENS_LIMIT" }
+        quotaData.limits?.first { $0.type == "TOKENS_LIMIT" }
     }
     
     var timeLimit: QuotaLimit? {
-        quotaData.limits.first { $0.type == "TIME_LIMIT" }
+        quotaData.limits?.first { $0.type == "TIME_LIMIT" }
     }
     
     var body: some View {
@@ -138,13 +138,15 @@ struct QuotaLimitsView: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
-                Text(quotaData.level.uppercased())
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.secondary.opacity(0.15))
-                    .cornerRadius(3)
+                if let level = quotaData.level {
+                    Text(level.uppercased())
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(3)
+                }
             }
             
             if let tokenLimit = tokenLimit {
@@ -165,13 +167,15 @@ struct QuotaLimitRow: View {
     let limit: QuotaLimit
     let label: String
     
-    var resetDate: Date {
-        Date(timeIntervalSince1970: limit.nextResetTime / 1000)
+    var resetDate: Date? {
+        guard let nextResetTime = limit.nextResetTime else { return nil }
+        return Date(timeIntervalSince1970: nextResetTime / 1000)
     }
     
     var progressColor: Color {
-        if limit.percentage >= 90 { return .red }
-        else if limit.percentage >= 70 { return .orange }
+        guard let percentage = limit.percentage else { return .green }
+        if percentage >= 90 { return .red }
+        else if percentage >= 70 { return .orange }
         else { return .green }
     }
     
@@ -190,24 +194,30 @@ struct QuotaLimitRow: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Text(String(format: "%.0f%%", limit.percentage))
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(progressColor)
+                if let percentage = limit.percentage {
+                    Text(String(format: "%.0f%%", percentage))
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(progressColor)
+                }
             }
             
-            ProgressView(value: min(limit.percentage, 100), total: 100)
-                .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
-                .frame(height: 3)
-            
-            HStack {
-                Spacer()
-                Image(systemName: "clock")
-                    .font(.caption2)
-                Text("resets \(resetDate, style: .relative)")
-                    .font(.caption2)
+            if let percentage = limit.percentage {
+                ProgressView(value: min(percentage, 100), total: 100)
+                    .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
+                    .frame(height: 3)
             }
-            .foregroundColor(Color.secondary)
+            
+            if let resetDate = resetDate {
+                HStack {
+                    Spacer()
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                    Text("resets \(resetDate, style: .relative)")
+                        .font(.caption2)
+                }
+                .foregroundColor(Color.secondary)
+            }
         }
     }
 }
@@ -222,15 +232,19 @@ struct ModelUsageView: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
-                Text(formatTokens(modelData.totalUsage.totalTokensUsage))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                if let totalUsage = modelData.totalUsage, let tokens = totalUsage.totalTokensUsage {
+                    Text(formatTokens(tokens))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
             
-            HStack(spacing: 12) {
-                Label("\(modelData.totalUsage.totalModelCallCount)", systemImage: "bubble.left")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+            if let totalUsage = modelData.totalUsage, let calls = totalUsage.totalModelCallCount {
+                HStack(spacing: 12) {
+                    Label("\(calls)", systemImage: "bubble.left")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .padding(8)
@@ -255,18 +269,20 @@ struct ToolUsageView: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
-                Text("\(toolData.totalUsage.totalSearchMcpCount) calls")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                if let totalUsage = toolData.totalUsage, let searchCount = totalUsage.totalSearchMcpCount {
+                    Text("\(searchCount) calls")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
             
-            if !toolData.totalUsage.toolDetails.isEmpty {
-                ForEach(toolData.totalUsage.toolDetails, id: \.modelName) { detail in
+            if let toolDetails = toolData.totalUsage?.toolDetails, !toolDetails.isEmpty {
+                ForEach(Array(toolDetails.enumerated()), id: \.offset) { _, detail in
                     HStack {
-                        Text(detail.modelName)
+                        Text(detail.modelName ?? "")
                             .font(.caption2)
                         Spacer()
-                        Text("\(detail.totalUsageCount)")
+                        Text("\(detail.totalUsageCount ?? 0)")
                             .font(.caption2)
                             .fontWeight(.medium)
                     }

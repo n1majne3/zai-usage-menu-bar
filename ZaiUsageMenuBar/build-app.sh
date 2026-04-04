@@ -54,3 +54,7 @@ PLIST
 
 echo "App bundle created at: $APP_BUNDLE"
 echo "Run with: open $APP_BUNDLE"
+
+# Ad-hoc sign the app bundle for Gatekeeper compatibility
+codesign --force --sign - --options runtime "$APP_BUNDLE"
+echo "App bundle signed"
