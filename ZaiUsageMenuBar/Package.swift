@@ -9,7 +9,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ZaiUsageMenuBar",
-            path: "Sources/ZaiUsageMenuBar"
+            path: "Sources/ZaiUsageMenuBar",
+            resources: [
+                .process("Assets.xcassets")
+            ]
         )
     ]
 )
