@@ -3,7 +3,6 @@ import SwiftUI
 @main
 struct ZaiUsageMenuBarApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @AppStorage("preferredLanguage") private var preferredLanguage: String = "system"
     
     init() {
         applyLanguagePreference()
@@ -16,10 +15,10 @@ struct ZaiUsageMenuBarApp: App {
     }
     
     private func applyLanguagePreference() {
+        let preferredLanguage = UserDefaults.standard.string(forKey: "preferredLanguage") ?? "system"
         guard preferredLanguage != "system" else { return }
         
         let languageCode = preferredLanguage == "zh-Hans" ? "zh-Hans" : "en"
         UserDefaults.standard.set([languageCode], forKey: "AppleLanguages")
-        UserDefaults.standard.synchronize()
     }
 }
