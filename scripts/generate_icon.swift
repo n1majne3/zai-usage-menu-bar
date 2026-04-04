@@ -58,10 +58,10 @@ extension NSImage {
     func tinted(with color: NSColor) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()
-        color.set()
         let rect = NSRect(origin: .zero, size: size)
-        rect.fill(using: .sourceAtop)
         self.draw(in: rect)
+        color.set()
+        rect.fill(using: .sourceAtop)
         image.unlockFocus()
         return image
     }
