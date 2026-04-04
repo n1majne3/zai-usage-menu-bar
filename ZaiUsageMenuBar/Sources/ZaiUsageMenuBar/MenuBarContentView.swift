@@ -57,7 +57,7 @@ struct HeaderView: View {
     
     var body: some View {
         HStack(spacing: 6) {
-            Text("Zai Usage")
+            Text(L10n.localized("app_title"))
                 .font(.subheadline)
                 .fontWeight(.semibold)
             
@@ -81,7 +81,7 @@ struct HeaderView: View {
                     .font(.system(size: 12))
             }
             .buttonStyle(.plain)
-            .help("Settings")
+            .help(L10n.localized("settings"))
             
             Button {
                 NSApp.terminate(nil)
@@ -90,7 +90,7 @@ struct HeaderView: View {
                     .font(.system(size: 12))
             }
             .buttonStyle(.plain)
-            .help("Quit")
+            .help(L10n.localized("quit"))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -110,7 +110,7 @@ struct ErrorView: View {
                 .foregroundColor(.secondary)
                 .lineLimit(2)
             Spacer()
-            Button("Retry", action: retryAction)
+            Button(L10n.localized("retry"), action: retryAction)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }
@@ -134,7 +134,7 @@ struct QuotaLimitsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Quota")
+                Text(L10n.localized("quota"))
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
@@ -150,11 +150,11 @@ struct QuotaLimitsView: View {
             }
             
             if let tokenLimit = tokenLimit {
-                QuotaLimitRow(limit: tokenLimit, label: "Token (5h)")
+                QuotaLimitRow(limit: tokenLimit, label: L10n.localized("token_label"))
             }
             
             if let timeLimit = timeLimit {
-                QuotaLimitRow(limit: timeLimit, label: "MCP (1m)")
+                QuotaLimitRow(limit: timeLimit, label: L10n.localized("mcp_label"))
             }
         }
         .padding(8)
@@ -213,7 +213,7 @@ struct QuotaLimitRow: View {
                     Spacer()
                     Image(systemName: "clock")
                         .font(.caption2)
-                    Text("resets \(resetDate, style: .relative)")
+                    Text("\(L10n.localized("resets_prefix")) \(resetDate, style: .relative)")
                         .font(.caption2)
                 }
                 .foregroundColor(Color.secondary)
@@ -228,7 +228,7 @@ struct ModelUsageView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Model Usage")
+                Text(L10n.localized("model_usage"))
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
@@ -265,12 +265,12 @@ struct ToolUsageView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Tools")
+                Text(L10n.localized("tools"))
                     .font(.caption)
                     .fontWeight(.semibold)
                 Spacer()
                 if let totalUsage = toolData.totalUsage, let searchCount = totalUsage.totalSearchMcpCount {
-                    Text("\(searchCount) calls")
+                    Text("\(searchCount) \(L10n.localized("calls_suffix"))")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
