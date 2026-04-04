@@ -6,7 +6,7 @@ struct MenuBarContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            HeaderView(lastUpdated: viewModel.lastUpdated, isLoading: viewModel.isLoading, showSettings: $showSettings)
+            HeaderView(lastUpdated: viewModel.lastUpdated, isLoading: viewModel.isLoading, showSettings: $showSettings, onRefresh: viewModel.refresh)
             
             ScrollView {
                 VStack(spacing: 8) {
@@ -54,6 +54,7 @@ struct HeaderView: View {
     let lastUpdated: Date?
     let isLoading: Bool
     @Binding var showSettings: Bool
+    var onRefresh: (() -> Void)?
     
     var body: some View {
         HStack(spacing: 6) {
@@ -73,6 +74,15 @@ struct HeaderView: View {
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
+            
+            Button {
+                onRefresh?()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .help(L10n.localized("refresh"))
             
             Button {
                 showSettings = true
