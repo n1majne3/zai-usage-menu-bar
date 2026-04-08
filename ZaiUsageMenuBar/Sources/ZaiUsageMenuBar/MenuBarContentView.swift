@@ -358,15 +358,28 @@ struct ToolUsageView: View {
     }
 }
 
+private let accountColorPalette: [Color] = [
+    Color(red: 10/255, green: 132/255, blue: 1),      // Blue #0a84ff
+    Color(red: 255/255, green: 159/255, blue: 10/255), // Orange #ff9f0a
+    Color(red: 48/255, green: 209/255, blue: 88/255),  // Green #30d158
+    Color(red: 94/255, green: 92/255, blue: 230/255),  // Purple #5e5ce6
+    Color(red: 100/255, green: 210/255, blue: 255/255),// Cyan #64d2ff
+    Color(red: 255/255, green: 55/255, blue: 95/255),  // Pink #ff375f
+]
+
+func accountColor(for index: Int) -> Color {
+    accountColorPalette[index % accountColorPalette.count]
+}
+
+func progressColor(for percentage: Double?, accountAccent: Color) -> Color {
+    guard let percentage else { return accountAccent }
+    if percentage >= 90 { return Color(red: 255/255, green: 69/255, blue: 58/255) }
+    if percentage >= 70 { return Color(red: 255/255, green: 159/255, blue: 10/255) }
+    return accountAccent
+}
+
 func formatTokenCount(_ count: Int) -> String {
     if count >= 1_000_000 { return String(format: "%.1fM", Double(count) / 1_000_000) }
     if count >= 1_000 { return String(format: "%.1fK", Double(count) / 1_000) }
     return "\(count)"
-}
-
-func progressColor(for percentage: Double?) -> Color {
-    guard let percentage else { return .green }
-    if percentage >= 90 { return .red }
-    if percentage >= 70 { return .orange }
-    return .green
 }
