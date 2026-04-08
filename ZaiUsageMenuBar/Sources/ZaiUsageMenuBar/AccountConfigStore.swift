@@ -163,7 +163,8 @@ private struct KeychainAuthTokenStore: AuthTokenStore {
         var query = baseQuery(for: accountID)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
-        
+        query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         guard status == errSecSuccess,
@@ -172,30 +173,34 @@ private struct KeychainAuthTokenStore: AuthTokenStore {
         else {
             return nil
         }
-        
+
         return token
     }
-    
+
     func setAuthToken(_ token: String, for accountID: String) throws {
         let data = Data(token.utf8)
         let query = baseQuery(for: accountID)
-        let attributes = [kSecValueData as String: data]
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+        ]
         let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        
+
         if updateStatus == errSecSuccess {
             return
         }
-        
+
         if updateStatus == errSecItemNotFound {
-            var item = query
+            var item: [String: Any] = baseQuery(for: accountID)
             item[kSecValueData as String] = data
+            item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
             let addStatus = SecItemAdd(item as CFDictionary, nil)
             guard addStatus == errSecSuccess else {
                 throw AccountConfigStoreError.keychainError(status: addStatus)
             }
             return
         }
-        
+
         throw AccountConfigStoreError.keychainError(status: updateStatus)
     }
     

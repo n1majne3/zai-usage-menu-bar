@@ -97,5 +97,17 @@ if [[ -z "$SIGNING_IDENTITY" ]]; then
     fi
 fi
 
-codesign --force --deep --sign "$SIGNING_IDENTITY" --options runtime --timestamp=none "$APP_BUNDLE"
+# Resolve the keychain containing the signing identity to avoid repeated unlock prompts
+SIGNING_KEYCHAIN=""
+if [[ "$SIGNING_IDENTITY" != "-" ]]; then
+    # Find which keychain holds this identity
+    SIGNING_KEYCHAIN=$(security find-identity -v -p codesigning | grep -F "\"$SIGNING_IDENTITY\"" | head -1 | grep -oE '/[^ "]+\.keychain-db' | head -1)
+fi
+
+CODESIGN_ARGS=(--force --deep --sign "$SIGNING_IDENTITY" --options runtime --timestamp=none)
+if [[ -n "$SIGNING_KEYCHAIN" ]]; then
+    CODESIGN_ARGS+=(--keychain "$SIGNING_KEYCHAIN")
+fi
+
+codesign "${CODESIGN_ARGS[@]}" "$APP_BUNDLE"
 echo "App bundle signed with identity: $SIGNING_IDENTITY"

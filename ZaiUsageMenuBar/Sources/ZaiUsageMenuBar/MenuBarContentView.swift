@@ -298,7 +298,7 @@ private struct QuotaBarRow: View {
 
     var body: some View {
         let color = progressColor(for: limit.percentage, accountAccent: accentColor)
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(label)
                     .font(.system(size: 9))
@@ -324,9 +324,10 @@ private struct QuotaBarRow: View {
                         .font(.system(size: 8))
                         .foregroundColor(.secondary.opacity(0.4))
                 }
+                .padding(.top, 1)
             }
         }
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
     }
 }
 
