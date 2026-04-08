@@ -7,6 +7,24 @@ struct APIResponse<T: Codable>: Codable {
     let success: Bool
 }
 
+struct ModelUsageTotal: Codable {
+    let totalModelCallCount: Int?
+    let totalTokensUsage: Int?
+}
+
+struct ModelDataItem: Codable {
+    let modelName: String?
+    let sortOrder: Int?
+    let tokensUsage: [Int?]?
+    let totalTokens: Int?
+}
+
+struct ModelSummaryItem: Codable {
+    let modelName: String?
+    let totalTokens: Int?
+    let sortOrder: Int?
+}
+
 struct ModelUsageData: Codable {
     let xTime: [String]?
     let modelCallCount: [Int?]?
@@ -25,24 +43,6 @@ struct ModelUsageData: Codable {
         case modelSummaryList
         case granularity
     }
-}
-
-struct ModelUsageTotal: Codable {
-    let totalModelCallCount: Int?
-    let totalTokensUsage: Int?
-}
-
-struct ModelDataItem: Codable {
-    let modelName: String?
-    let sortOrder: Int?
-    let tokensUsage: [Int?]?
-    let totalTokens: Int?
-}
-
-struct ModelSummaryItem: Codable {
-    let modelName: String?
-    let totalTokens: Int?
-    let sortOrder: Int?
 }
 
 struct ToolUsageData: Codable {
