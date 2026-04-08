@@ -34,6 +34,10 @@ enum L10n {
             "en": "Token (5h)",
             "zh": "Token (5小时)",
         ],
+        "weekly_token_label": [
+            "en": "Token (1w)",
+            "zh": "Token (1周)",
+        ],
         "mcp_label": [
             "en": "MCP (1m)",
             "zh": "MCP (1个月)",
@@ -49,14 +53,6 @@ enum L10n {
         "tools": [
             "en": "Tools",
             "zh": "工具调用",
-        ],
-        "combined": [
-            "en": "Combined",
-            "zh": "汇总",
-        ],
-        "accounts": [
-            "en": "Accounts",
-            "zh": "账号",
         ],
         "add_account": [
             "en": "Add Account",
