@@ -190,6 +190,7 @@ struct AccountSectionView: View {
     let colorIndex: Int
     let isExpanded: Bool
     let onToggle: () -> Void
+    @State private var hourlyRange: HourlyRange = .today(referenceDate: Date())
 
     private var accentColor: Color { accountColor(for: colorIndex) }
 
@@ -242,6 +243,22 @@ struct AccountSectionView: View {
                     if let usage = result.usage {
                         if let limits = usage.quotaLimits.limits, !limits.isEmpty {
                             QuotaSectionView(quotaData: usage.quotaLimits, accentColor: accentColor)
+                        }
+                        if let modelData = usage.modelUsage.modelDataList, !modelData.isEmpty {
+                            let bars = HourlyBars.from(modelData: usage.modelUsage, range: hourlyRange)
+                            let modelNames = modelData.compactMap { $0.modelName }
+
+                            Divider()
+                                .background(Color.primary.opacity(0.05))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+
+                            HourlyChartView(
+                                bars: bars,
+                                modelNames: modelNames,
+                                range: hourlyRange,
+                                onRangeChange: { hourlyRange = $0 }
+                            )
                         }
                         if usage.modelUsage.totalUsage != nil || usage.toolUsage.totalUsage != nil {
                             StatsSectionView(usage: usage, accentColor: accentColor)
@@ -398,7 +415,7 @@ private struct StatColumn: View {
     }
 }
 
-private let accountColorPalette: [Color] = [
+let accountColorPalette: [Color] = [
     Color(red: 10/255, green: 132/255, blue: 1),      // Blue #0a84ff
     Color(red: 255/255, green: 159/255, blue: 10/255), // Orange #ff9f0a
     Color(red: 48/255, green: 209/255, blue: 88/255),  // Green #30d158

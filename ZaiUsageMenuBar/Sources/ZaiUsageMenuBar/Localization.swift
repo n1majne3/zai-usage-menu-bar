@@ -142,6 +142,18 @@ enum L10n {
             "en": "System Default",
             "zh": "跟随系统",
         ],
+        "hourly_tokens": [
+            "en": "Hourly Tokens",
+            "zh": "每小时 Token",
+        ],
+        "no_data": [
+            "en": "No data",
+            "zh": "暂无数据",
+        ],
+        "today": [
+            "en": "Today",
+            "zh": "今天",
+        ],
     ]
 
     static func localized(_ key: String) -> String {
