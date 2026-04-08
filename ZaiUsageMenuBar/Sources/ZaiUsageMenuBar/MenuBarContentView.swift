@@ -142,6 +142,33 @@ struct ErrorView: View {
     }
 }
 
+struct TokenRingView: View {
+    let percentage: Double
+    let color: Color
+    let size: CGFloat
+
+    init(percentage: Double, color: Color, size: CGFloat = 24) {
+        self.percentage = min(max(percentage, 0), 100)
+        self.color = color
+        self.size = size
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.08), lineWidth: 2)
+            Circle()
+                .trim(from: 0, to: percentage / 100)
+                .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotation(.degrees(-90))
+            Text(String(format: "%.0f", percentage))
+                .font(.system(size: size * 0.3, weight: .bold))
+                .foregroundColor(color)
+        }
+        .frame(width: size, height: size)
+    }
+}
+
 struct AccountSectionView: View {
     let result: AccountUsageResult
     let isExpanded: Bool
