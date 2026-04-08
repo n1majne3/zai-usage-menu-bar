@@ -6,7 +6,7 @@ struct MenuBarContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            HeaderView(lastUpdated: viewModel.lastUpdated, isLoading: viewModel.isLoading, showSettings: $showSettings, onRefresh: viewModel.refresh)
+            HeaderView(lastUpdated: viewModel.dashboard?.lastUpdated, isLoading: viewModel.isLoading, showSettings: $showSettings, onRefresh: viewModel.refresh)
             
             ScrollView {
                 VStack(spacing: 8) {
@@ -14,16 +14,9 @@ struct MenuBarContentView: View {
                         ErrorView(message: error, retryAction: viewModel.refresh)
                     }
                     
-                    if let quotaLimits = viewModel.quotaLimits {
-                        QuotaLimitsView(quotaData: quotaLimits)
-                    }
-                    
-                    if let modelUsage = viewModel.modelUsage {
-                        ModelUsageView(modelData: modelUsage)
-                    }
-                    
-                    if let toolUsage = viewModel.toolUsage {
-                        ToolUsageView(toolData: toolUsage)
+                    if let dashboard = viewModel.dashboard {
+                        CombinedUsageSectionView(combinedData: dashboard.combined)
+                        AccountsUsageSectionView(results: dashboard.accounts)
                     }
                     
                     if viewModel.isLoading {
@@ -130,6 +123,111 @@ struct ErrorView: View {
     }
 }
 
+struct CombinedUsageSectionView: View {
+    let combinedData: CombinedUsageData
+    
+    private var hasContent: Bool {
+        combinedData.quotaLimits != nil || combinedData.modelUsage != nil || combinedData.toolUsage != nil
+    }
+    
+    var body: some View {
+        if hasContent {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L10n.localized("combined"))
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                if let quotaLimits = combinedData.quotaLimits {
+                    QuotaLimitsView(quotaData: quotaLimits)
+                }
+                
+                if let modelUsage = combinedData.modelUsage {
+                    ModelUsageView(modelData: modelUsage)
+                }
+                
+                if let toolUsage = combinedData.toolUsage {
+                    ToolUsageView(toolData: toolUsage)
+                }
+            }
+        }
+    }
+}
+
+struct AccountsUsageSectionView: View {
+    let results: [AccountUsageResult]
+    
+    var body: some View {
+        if !results.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L10n.localized("accounts"))
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                ForEach(results) { result in
+                    AccountUsageCardView(result: result)
+                }
+            }
+        }
+    }
+}
+
+struct AccountUsageCardView: View {
+    let result: AccountUsageResult
+
+    private var tokenPercentage: Double? {
+        UsageAggregation.tokenPercentage(from: result.usage?.quotaLimits)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(result.account.displayName)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                Spacer()
+                if let tokenPercentage = tokenPercentage {
+                    Text(String(format: "%.0f%%", tokenPercentage))
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(progressColor(for: tokenPercentage))
+                }
+            }
+            
+            if let usage = result.usage {
+                HStack(spacing: 12) {
+                    if let tokens = usage.modelUsage.totalUsage?.totalTokensUsage {
+                        Label(formatTokenCount(tokens), systemImage: "number")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if let calls = usage.modelUsage.totalUsage?.totalModelCallCount {
+                        Label("\(calls)", systemImage: "bubble.left")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if let toolCalls = usage.toolUsage.totalUsage?.totalSearchMcpCount {
+                        Label("\(toolCalls)", systemImage: "wrench.and.screwdriver")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else if let error = result.error {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+            }
+        }
+        .padding(8)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(6)
+    }
+}
+
 struct QuotaLimitsView: View {
     let quotaData: QuotaLimitData
     
@@ -181,40 +279,34 @@ struct QuotaLimitRow: View {
         guard let nextResetTime = limit.nextResetTime else { return nil }
         return Date(timeIntervalSince1970: nextResetTime / 1000)
     }
-    
-    var progressColor: Color {
-        guard let percentage = limit.percentage else { return .green }
-        if percentage >= 90 { return .red }
-        else if percentage >= 70 { return .orange }
-        else { return .green }
-    }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        let color = progressColor(for: limit.percentage)
+        return VStack(alignment: .leading, spacing: 3) {
             HStack {
                 Text(label)
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                
+
                 Spacer()
-                
+
                 if let current = limit.currentValue, let usage = limit.usage {
                     Text(String(format: "%.0f/%.0f", current, usage))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                
+
                 if let percentage = limit.percentage {
                     Text(String(format: "%.0f%%", percentage))
                         .font(.caption2)
                         .fontWeight(.semibold)
-                        .foregroundColor(progressColor)
+                        .foregroundColor(color)
                 }
             }
-            
+
             if let percentage = limit.percentage {
                 ProgressView(value: min(percentage, 100), total: 100)
-                    .progressViewStyle(LinearProgressViewStyle(tint: progressColor))
+                    .progressViewStyle(LinearProgressViewStyle(tint: color))
                     .frame(height: 3)
             }
             
@@ -243,7 +335,7 @@ struct ModelUsageView: View {
                     .fontWeight(.semibold)
                 Spacer()
                 if let totalUsage = modelData.totalUsage, let tokens = totalUsage.totalTokensUsage {
-                    Text(formatTokens(tokens))
+                    Text(formatTokenCount(tokens))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -260,12 +352,6 @@ struct ModelUsageView: View {
         .padding(8)
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(6)
-    }
-    
-    func formatTokens(_ count: Int) -> String {
-        if count >= 1_000_000 { return String(format: "%.1fM", Double(count) / 1_000_000) }
-        else if count >= 1_000 { return String(format: "%.1fK", Double(count) / 1_000) }
-        return "\(count)"
     }
 }
 
@@ -303,4 +389,17 @@ struct ToolUsageView: View {
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(6)
     }
+}
+
+func formatTokenCount(_ count: Int) -> String {
+    if count >= 1_000_000 { return String(format: "%.1fM", Double(count) / 1_000_000) }
+    if count >= 1_000 { return String(format: "%.1fK", Double(count) / 1_000) }
+    return "\(count)"
+}
+
+func progressColor(for percentage: Double?) -> Color {
+    guard let percentage else { return .green }
+    if percentage >= 90 { return .red }
+    if percentage >= 70 { return .orange }
+    return .green
 }

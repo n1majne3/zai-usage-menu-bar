@@ -70,3 +70,42 @@ struct UsageDetail: Codable {
     let modelCode: String?
     let usage: Double?
 }
+
+struct AccountConfig: Codable, Identifiable, Hashable {
+    let id: String
+    var name: String
+    var authToken: String
+    var isEnabled: Bool
+
+    var displayName: String {
+        name.trimmed.isEmpty ? L10n.localized("unnamed_account") : name
+    }
+    
+    static func newDefault() -> AccountConfig {
+        AccountConfig(
+            id: UUID().uuidString,
+            name: L10n.localized("default_account_name"),
+            authToken: "",
+            isEnabled: true
+        )
+    }
+}
+
+struct AccountUsageResult: Identifiable {
+    var id: String { account.id }
+    let account: AccountConfig
+    let usage: UsageData?
+    let error: String?
+}
+
+struct CombinedUsageData {
+    let modelUsage: ModelUsageData?
+    let toolUsage: ToolUsageData?
+    let quotaLimits: QuotaLimitData?
+}
+
+struct UsageDashboardData {
+    let combined: CombinedUsageData
+    let accounts: [AccountUsageResult]
+    let lastUpdated: Date
+}

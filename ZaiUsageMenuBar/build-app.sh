@@ -8,6 +8,16 @@ CONTENTS="$APP_BUNDLE/Contents"
 MACOS="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
 
+resolve_signing_identity() {
+    if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
+        echo "$SIGNING_IDENTITY"
+        return
+    fi
+
+    # Prefer a real code-signing certificate so Keychain trust can persist across rebuilds.
+    security find-identity -v -p codesigning | awk -F'"' '/"[^"]+"/ { print $2; exit }'
+}
+
 # Build release binary
 swift build -c release
 
@@ -73,6 +83,19 @@ PLIST
 echo "App bundle created at: $APP_BUNDLE"
 echo "Run with: open $APP_BUNDLE"
 
-# Ad-hoc sign the app bundle for Gatekeeper compatibility
-codesign --force --sign - --options runtime "$APP_BUNDLE"
-echo "App bundle signed"
+SIGNING_IDENTITY="$(resolve_signing_identity)"
+
+if [[ -z "$SIGNING_IDENTITY" ]]; then
+    if [[ "${ALLOW_ADHOC_SIGNING:-0}" == "1" ]]; then
+        SIGNING_IDENTITY="-"
+        echo "Warning: no signing certificate found, using ad-hoc signing."
+    else
+        echo "Error: no code-signing identity found."
+        echo "Set SIGNING_IDENTITY to a valid identity name, or set ALLOW_ADHOC_SIGNING=1 to force ad-hoc signing."
+        echo "Tip: run 'security find-identity -v -p codesigning' to list identities."
+        exit 1
+    fi
+fi
+
+codesign --force --deep --sign "$SIGNING_IDENTITY" --options runtime --timestamp=none "$APP_BUNDLE"
+echo "App bundle signed with identity: $SIGNING_IDENTITY"
