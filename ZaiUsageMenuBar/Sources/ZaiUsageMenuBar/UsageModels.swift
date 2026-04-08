@@ -98,14 +98,7 @@ struct AccountUsageResult: Identifiable {
     let error: String?
 }
 
-struct CombinedUsageData {
-    let modelUsage: ModelUsageData?
-    let toolUsage: ToolUsageData?
-    let quotaLimits: QuotaLimitData?
-}
-
 struct UsageDashboardData {
-    let combined: CombinedUsageData
     let accounts: [AccountUsageResult]
     let lastUpdated: Date
 }

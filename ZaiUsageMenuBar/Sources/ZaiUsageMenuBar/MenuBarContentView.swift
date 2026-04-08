@@ -3,22 +3,28 @@ import SwiftUI
 struct MenuBarContentView: View {
     @StateObject private var viewModel = UsageViewModel()
     @State private var showSettings = false
-    
+    @State private var expandedAccounts: Set<String> = []
+
     var body: some View {
         VStack(spacing: 0) {
             HeaderView(lastUpdated: viewModel.dashboard?.lastUpdated, isLoading: viewModel.isLoading, showSettings: $showSettings, onRefresh: viewModel.refresh)
-            
+
             ScrollView {
                 VStack(spacing: 8) {
                     if let error = viewModel.error {
                         ErrorView(message: error, retryAction: viewModel.refresh)
                     }
-                    
+
                     if let dashboard = viewModel.dashboard {
-                        CombinedUsageSectionView(combinedData: dashboard.combined)
-                        AccountsUsageSectionView(results: dashboard.accounts)
+                        ForEach(dashboard.accounts) { result in
+                            AccountSectionView(
+                                result: result,
+                                isExpanded: expandedAccounts.contains(result.id),
+                                onToggle: { toggleAccount(result.id) }
+                            )
+                        }
                     }
-                    
+
                     if viewModel.isLoading {
                         ProgressView()
                             .scaleEffect(0.8)
@@ -37,8 +43,21 @@ struct MenuBarContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .refreshUsage)) { _ in
             viewModel.refresh()
         }
+        .onChange(of: viewModel.dashboard?.accounts.count) {
+            if let accounts = viewModel.dashboard?.accounts {
+                expandedAccounts = Set(accounts.map(\.id))
+            }
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+    }
+
+    private func toggleAccount(_ id: String) {
+        if expandedAccounts.contains(id) {
+            expandedAccounts.remove(id)
+        } else {
+            expandedAccounts.insert(id)
         }
     }
 }
@@ -48,26 +67,26 @@ struct HeaderView: View {
     let isLoading: Bool
     @Binding var showSettings: Bool
     var onRefresh: (() -> Void)?
-    
+
     var body: some View {
         HStack(spacing: 6) {
             Text(L10n.localized("app_title"))
                 .font(.subheadline)
                 .fontWeight(.semibold)
-            
+
             Spacer()
-            
+
             if isLoading {
                 ProgressView()
                     .scaleEffect(0.6)
             }
-            
+
             if let lastUpdated = lastUpdated {
                 Text(lastUpdated, style: .time)
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
-            
+
             Button {
                 onRefresh?()
             } label: {
@@ -76,7 +95,7 @@ struct HeaderView: View {
             }
             .buttonStyle(.plain)
             .help(L10n.localized("refresh"))
-            
+
             Button {
                 showSettings = true
             } label: {
@@ -85,7 +104,7 @@ struct HeaderView: View {
             }
             .buttonStyle(.plain)
             .help(L10n.localized("settings"))
-            
+
             Button {
                 NSApp.terminate(nil)
             } label: {
@@ -103,7 +122,7 @@ struct HeaderView: View {
 struct ErrorView: View {
     let message: String
     let retryAction: () -> Void
-    
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle")
@@ -123,122 +142,63 @@ struct ErrorView: View {
     }
 }
 
-struct CombinedUsageSectionView: View {
-    let combinedData: CombinedUsageData
-    
-    private var hasContent: Bool {
-        combinedData.quotaLimits != nil || combinedData.modelUsage != nil || combinedData.toolUsage != nil
-    }
-    
-    var body: some View {
-        if hasContent {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(L10n.localized("combined"))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                
-                if let quotaLimits = combinedData.quotaLimits {
-                    QuotaLimitsView(quotaData: quotaLimits)
-                }
-                
-                if let modelUsage = combinedData.modelUsage {
-                    ModelUsageView(modelData: modelUsage)
-                }
-                
-                if let toolUsage = combinedData.toolUsage {
-                    ToolUsageView(toolData: toolUsage)
-                }
-            }
-        }
-    }
-}
-
-struct AccountsUsageSectionView: View {
-    let results: [AccountUsageResult]
-    
-    var body: some View {
-        if !results.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(L10n.localized("accounts"))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                
-                ForEach(results) { result in
-                    AccountUsageCardView(result: result)
-                }
-            }
-        }
-    }
-}
-
-struct AccountUsageCardView: View {
+struct AccountSectionView: View {
     let result: AccountUsageResult
+    let isExpanded: Bool
+    let onToggle: () -> Void
 
     private var tokenPercentage: Double? {
         UsageAggregation.tokenPercentage(from: result.usage?.quotaLimits)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(result.account.displayName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                Spacer()
-                if let tokenPercentage = tokenPercentage {
-                    Text(String(format: "%.0f%%", tokenPercentage))
-                        .font(.caption2)
+        VStack(alignment: .leading, spacing: 6) {
+            Button(action: onToggle) {
+                HStack(spacing: 4) {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                    Text(result.account.displayName)
+                        .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(progressColor(for: tokenPercentage))
+                    Spacer()
+                    if let tokenPercentage = tokenPercentage {
+                        Text(String(format: "%.0f%%", tokenPercentage))
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(progressColor(for: tokenPercentage))
+                    }
                 }
             }
-            
-            if let usage = result.usage {
-                HStack(spacing: 12) {
-                    if let tokens = usage.modelUsage.totalUsage?.totalTokensUsage {
-                        Label(formatTokenCount(tokens), systemImage: "number")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                if let usage = result.usage {
+                    if let limits = usage.quotaLimits.limits, !limits.isEmpty {
+                        QuotaLimitsView(quotaData: usage.quotaLimits)
                     }
-                    
-                    if let calls = usage.modelUsage.totalUsage?.totalModelCallCount {
-                        Label("\(calls)", systemImage: "bubble.left")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+
+                    if usage.modelUsage.totalUsage != nil {
+                        ModelUsageView(modelData: usage.modelUsage)
                     }
-                    
-                    if let toolCalls = usage.toolUsage.totalUsage?.totalSearchMcpCount {
-                        Label("\(toolCalls)", systemImage: "wrench.and.screwdriver")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+
+                    if usage.toolUsage.totalUsage != nil {
+                        ToolUsageView(toolData: usage.toolUsage)
                     }
+                } else if let error = result.error {
+                    Text(error)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
                 }
-            } else if let error = result.error {
-                Text(error)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(3)
             }
         }
-        .padding(8)
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(6)
     }
 }
 
 struct QuotaLimitsView: View {
     let quotaData: QuotaLimitData
-    
-    var tokenLimit: QuotaLimit? {
-        quotaData.limits?.first { $0.type == "TOKENS_LIMIT" }
-    }
-    
-    var timeLimit: QuotaLimit? {
-        quotaData.limits?.first { $0.type == "TIME_LIMIT" }
-    }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
@@ -256,25 +216,32 @@ struct QuotaLimitsView: View {
                         .cornerRadius(3)
                 }
             }
-            
-            if let tokenLimit = tokenLimit {
-                QuotaLimitRow(limit: tokenLimit, label: L10n.localized("token_label"))
-            }
-            
-            if let timeLimit = timeLimit {
-                QuotaLimitRow(limit: timeLimit, label: L10n.localized("mcp_label"))
+
+            ForEach(Array(quotaData.limits?.enumerated() ?? [].enumerated()), id: \.offset) { _, limit in
+                QuotaLimitRow(limit: limit, label: labelForLimit(limit))
             }
         }
         .padding(8)
         .background(Color(NSColor.controlBackgroundColor))
         .cornerRadius(6)
     }
+
+    private func labelForLimit(_ limit: QuotaLimit) -> String {
+        if limit.type == "TOKENS_LIMIT" {
+            if limit.unit == 6 { return L10n.localized("weekly_token_label") }
+            return L10n.localized("token_label")
+        }
+        if limit.type == "TIME_LIMIT" {
+            return L10n.localized("mcp_label")
+        }
+        return limit.type ?? ""
+    }
 }
 
 struct QuotaLimitRow: View {
     let limit: QuotaLimit
     let label: String
-    
+
     var resetDate: Date? {
         guard let nextResetTime = limit.nextResetTime else { return nil }
         return Date(timeIntervalSince1970: nextResetTime / 1000)
@@ -309,7 +276,7 @@ struct QuotaLimitRow: View {
                     .progressViewStyle(LinearProgressViewStyle(tint: color))
                     .frame(height: 3)
             }
-            
+
             if let resetDate = resetDate {
                 HStack {
                     Spacer()
@@ -326,7 +293,7 @@ struct QuotaLimitRow: View {
 
 struct ModelUsageView: View {
     let modelData: ModelUsageData
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -340,7 +307,7 @@ struct ModelUsageView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             if let totalUsage = modelData.totalUsage, let calls = totalUsage.totalModelCallCount {
                 HStack(spacing: 12) {
                     Label("\(calls)", systemImage: "bubble.left")
@@ -357,7 +324,7 @@ struct ModelUsageView: View {
 
 struct ToolUsageView: View {
     let toolData: ToolUsageData
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -371,7 +338,7 @@ struct ToolUsageView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             if let toolDetails = toolData.totalUsage?.toolDetails, !toolDetails.isEmpty {
                 ForEach(Array(toolDetails.enumerated()), id: \.offset) { _, detail in
                     HStack {

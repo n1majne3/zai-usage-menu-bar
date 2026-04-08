@@ -2,10 +2,24 @@ import Foundation
 
 class UsageAPIClient {
     static let shared = UsageAPIClient()
-    
-    private static let modelUsageUrl = "https://open.bigmodel.cn/api/monitor/usage/model-usage"
-    private static let toolUsageUrl = "https://open.bigmodel.cn/api/monitor/usage/tool-usage"
-    private static let quotaLimitUrl = "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
+
+    static let baseUrlOptions = [
+        "https://api.z.ai/api/anthropic",
+        "https://open.bigmodel.cn/api/anthropic"
+    ]
+
+    private var selectedBaseUrl: String {
+        UserDefaults.standard.string(forKey: "selectedBaseUrl")
+        ?? Self.baseUrlOptions[1]
+    }
+
+    private var monitorBase: String {
+        selectedBaseUrl.replacingOccurrences(of: "/anthropic", with: "")
+    }
+
+    private var modelUsageUrl: String { "\(monitorBase)/monitor/usage/model-usage" }
+    private var toolUsageUrl: String { "\(monitorBase)/monitor/usage/tool-usage" }
+    private var quotaLimitUrl: String { "\(monitorBase)/monitor/usage/quota/limit" }
     
     private init() {}
     
@@ -30,9 +44,9 @@ class UsageAPIClient {
         let endTime = String(format: "%04d-%02d-%02d %02d:59:59",
                              endComponents.year!, endComponents.month!, endComponents.day!, endComponents.hour!)
         
-        async let modelUsageTask = fetchJSON(url: Self.modelUsageUrl, startTime: startTime, endTime: endTime, authToken: authToken)
-        async let toolUsageTask = fetchJSON(url: Self.toolUsageUrl, startTime: startTime, endTime: endTime, authToken: authToken)
-        async let quotaLimitTask = fetchJSON(url: Self.quotaLimitUrl, startTime: nil, endTime: nil, authToken: authToken)
+        async let modelUsageTask = fetchJSON(url: modelUsageUrl, startTime: startTime, endTime: endTime, authToken: authToken)
+        async let toolUsageTask = fetchJSON(url: toolUsageUrl, startTime: startTime, endTime: endTime, authToken: authToken)
+        async let quotaLimitTask = fetchJSON(url: quotaLimitUrl, startTime: nil, endTime: nil, authToken: authToken)
         
         let (modelUsageRaw, toolUsageRaw, quotaLimitRaw) = try await (modelUsageTask, toolUsageTask, quotaLimitTask)
         
