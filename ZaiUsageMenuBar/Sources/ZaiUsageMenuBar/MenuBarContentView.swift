@@ -43,7 +43,7 @@ struct MenuBarContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .refreshUsage)) { _ in
             viewModel.refresh()
         }
-        .onChange(of: viewModel.dashboard?.accounts.count) { _ in
+        .onChange(of: viewModel.dashboard?.accounts.count) {
             if let accounts = viewModel.dashboard?.accounts {
                 expandedAccounts = Set(accounts.map(\.id))
             }
