@@ -70,6 +70,21 @@ struct HeaderView: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            AsyncImage(url: URL(string: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg")) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } else {
+                    Text("Z")
+                        .font(.system(size: 10, weight: .bold))
+                        .frame(width: 20, height: 20)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(5)
+                }
+            }
+            .frame(width: 20, height: 20)
+
             Text(L10n.localized("app_title"))
                 .font(.subheadline)
                 .fontWeight(.semibold)
