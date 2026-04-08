@@ -121,19 +121,20 @@ struct HourlyChartView: View {
     }
 
     private func tooltipOverlay(bar: HourlyBar) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 1) {
             Text(bar.label + ":00")
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundColor(.primary.opacity(0.8))
             ForEach(Array(bar.segments.enumerated()), id: \.offset) { _, segment in
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
                     Circle()
                         .fill(colorForModel(segment.model))
                         .frame(width: 4, height: 4)
                     Text(segment.model)
                         .font(.system(size: 7))
                         .foregroundColor(.secondary)
-                    Spacer()
+                        .lineLimit(1)
+                        .layoutPriority(1)
                     Text(formatTokenCount(segment.tokens))
                         .font(.system(size: 7, weight: .medium))
                         .foregroundColor(.primary.opacity(0.8))
@@ -141,22 +142,16 @@ struct HourlyChartView: View {
             }
             Divider()
                 .background(Color.primary.opacity(0.1))
-            HStack {
-                Text("Total")
-                    .font(.system(size: 7))
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text(formatTokenCount(bar.totalTokens))
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundColor(.primary.opacity(0.9))
-            }
+            Text(formatTokenCount(bar.totalTokens))
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(.primary.opacity(0.9))
         }
-        .padding(6)
+        .padding(5)
+        .frame(minWidth: 80, maxWidth: 120)
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.95))
         .background(.ultraThinMaterial)
         .cornerRadius(6)
         .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
-        .padding(.horizontal, 4)
         .offset(y: -barHeight - 8)
     }
 
