@@ -164,11 +164,8 @@ struct RangeStats {
             )
         }
 
-        // Fallback to aggregate totals when hourly buckets are missing
-        return RangeStats(
-            modelCalls: modelData.totalUsage?.totalModelCallCount,
-            tokens: modelData.totalUsage?.totalTokensUsage
-        )
+        // No hourly buckets — can't range-filter, so return nil to avoid misleading stats
+        return RangeStats(modelCalls: nil, tokens: nil)
     }
 }
 
