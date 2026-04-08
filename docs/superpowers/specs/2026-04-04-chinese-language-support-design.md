@@ -29,7 +29,7 @@ Add Simplified Chinese localization to the ZaiUsageMenuBar app using Xcode Strin
 | retry | Retry | 重试 |
 | quota | Quota | 配额 |
 | token_label | Token (5h) | Token (5小时) |
-| mcp_label | MCP (1m) | MCP (1分钟) |
+| mcp_label | MCP (1m) | MCP (1个月) |
 | resets | resets | 重置 |
 | model_usage | Model Usage | 模型用量 |
 | tools | Tools | 工具调用 |

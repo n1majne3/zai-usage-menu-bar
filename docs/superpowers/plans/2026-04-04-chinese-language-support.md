@@ -130,7 +130,7 @@ Create the string catalog file with English base and Chinese (Simplified) transl
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "MCP (1分钟)"
+            "value": "MCP (1个月)"
           }
         }
       }

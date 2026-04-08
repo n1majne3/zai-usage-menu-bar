@@ -3,13 +3,10 @@ import Foundation
 
 @MainActor
 class UsageViewModel: ObservableObject {
-    @Published var modelUsage: ModelUsageData?
-    @Published var toolUsage: ToolUsageData?
-    @Published var quotaLimits: QuotaLimitData?
+    @Published var dashboard: UsageDashboardData?
     @Published var isLoading = false
     @Published var error: String?
-    @Published var lastUpdated: Date?
-    
+
     func refresh() {
         guard !isLoading else { return }
         
@@ -17,20 +14,34 @@ class UsageViewModel: ObservableObject {
         error = nil
         
         Task {
-            do {
-                let usageData = try await UsageAPIClient.shared.fetchUsage()
-                self.modelUsage = usageData.modelUsage
-                self.toolUsage = usageData.toolUsage
-                self.quotaLimits = usageData.quotaLimits
-                self.lastUpdated = usageData.lastUpdated
-                self.error = nil
-                
-                let tokenLimit = usageData.quotaLimits.limits?.first { $0.type == "TOKENS_LIMIT" }
-                AppDelegate.shared?.updateStatusItem(percentage: tokenLimit?.percentage)
-            } catch {
-                self.error = error.localizedDescription
+            let accounts = AccountConfigStore.loadAccounts()
+            let enabledAccounts = accounts.filter { $0.isEnabled && !$0.authToken.trimmed.isEmpty }
+            
+            guard !enabledAccounts.isEmpty else {
+                self.dashboard = nil
+                self.error = L10n.localized("no_accounts_configured")
                 AppDelegate.shared?.updateStatusItem(percentage: nil)
+                self.isLoading = false
+                return
             }
+            
+            let accountResults = await UsageAPIClient.shared.fetchAllUsage(accounts: enabledAccounts)
+            let successfulUsages = accountResults.compactMap(\.usage)
+            let combined = UsageAggregation.combine(successfulUsages)
+            let now = Date()
+            
+            self.dashboard = UsageDashboardData(combined: combined, accounts: accountResults, lastUpdated: now)
+
+            if successfulUsages.isEmpty {
+                self.error = L10n.localized("all_accounts_failed")
+                AppDelegate.shared?.updateStatusItem(percentage: nil)
+            } else {
+                self.error = nil
+                AppDelegate.shared?.updateStatusItem(
+                    percentage: UsageAggregation.tokenPercentage(from: combined.quotaLimits)
+                )
+            }
+            
             self.isLoading = false
         }
     }

@@ -9,8 +9,9 @@ class UsageAPIClient {
     
     private init() {}
     
-    func fetchUsage() async throws -> UsageData {
-        guard let authToken = UserDefaults.standard.string(forKey: "anthropicAuthToken"), !authToken.isEmpty else {
+    func fetchUsage(for account: AccountConfig) async throws -> UsageData {
+        let authToken = account.authToken.trimmed
+        guard !authToken.isEmpty else {
             throw UsageError.missingAuthToken
         }
         
@@ -63,6 +64,29 @@ class UsageAPIClient {
             quotaLimits: quotaLimitResponse.data,
             lastUpdated: Date()
         )
+    }
+    
+    func fetchAllUsage(accounts: [AccountConfig]) async -> [AccountUsageResult] {
+        guard !accounts.isEmpty else { return [] }
+        
+        return await withTaskGroup(of: (Int, AccountUsageResult).self) { group in
+            for (index, account) in accounts.enumerated() {
+                group.addTask {
+                    do {
+                        let usage = try await self.fetchUsage(for: account)
+                        return (index, AccountUsageResult(account: account, usage: usage, error: nil))
+                    } catch {
+                        return (index, AccountUsageResult(account: account, usage: nil, error: error.localizedDescription))
+                    }
+                }
+            }
+            
+            var orderedResults = Array<AccountUsageResult?>(repeating: nil, count: accounts.count)
+            for await (index, result) in group {
+                orderedResults[index] = result
+            }
+            return orderedResults.compactMap { $0 }
+        }
     }
     
     private func fetchJSON(url: String, startTime: String?, endTime: String?, authToken: String) async throws -> Data {
