@@ -21,6 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = MenuBarContentView()
         popover.contentSize = NSSize(width: 300, height: 360)
         popover.behavior = .transient
+        popover.appearance = NSAppearance(named: .darkAqua)
         popover.contentViewController = NSHostingController(rootView: contentView)
         
         refreshTimer = Timer(timeInterval: 300, repeats: true) { _ in
