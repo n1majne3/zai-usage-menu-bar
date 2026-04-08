@@ -222,7 +222,7 @@ struct QuotaLimitsView: View {
             }
         }
         .padding(8)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(Color.white.opacity(0.10))
         .cornerRadius(6)
     }
 
@@ -317,7 +317,7 @@ struct ModelUsageView: View {
             }
         }
         .padding(8)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(Color.white.opacity(0.10))
         .cornerRadius(6)
     }
 }
@@ -353,7 +353,7 @@ struct ToolUsageView: View {
             }
         }
         .padding(8)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(Color.white.opacity(0.10))
         .cornerRadius(6)
     }
 }
