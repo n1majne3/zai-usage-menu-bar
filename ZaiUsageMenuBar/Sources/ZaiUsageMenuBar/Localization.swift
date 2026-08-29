@@ -18,6 +18,10 @@ enum L10n {
             "en": "Quit",
             "zh": "退出",
         ],
+        "close": [
+            "en": "Close",
+            "zh": "关闭",
+        ],
         "retry": [
             "en": "Retry",
             "zh": "重试",

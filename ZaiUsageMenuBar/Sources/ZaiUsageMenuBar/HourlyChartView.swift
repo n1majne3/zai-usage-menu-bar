@@ -12,6 +12,7 @@ struct HourlyChartView: View {
     private let barHeight: CGFloat = 60
     private let barGap: CGFloat = 2
     private let maxLabelCount = 5
+    private let tooltipMaxWidth: CGFloat = 140
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -59,14 +60,25 @@ struct HourlyChartView: View {
                                     .onHover { hovering in
                                         hoveredBarIndex = hovering ? index : nil
                                     }
-                                    .overlay(alignment: .bottom) {
-                                        if hoveredBarIndex == index {
-                                            tooltipOverlay(bar: bar)
-                                        }
-                                    }
                                 }
                             }
                             .frame(height: barHeight)
+                            .overlay(alignment: .topLeading) {
+                                if let index = hoveredBarIndex, let bar = bars[safe: index] {
+                                    let barCenterX = CGFloat(index) * (barWidth + barGap) + barWidth / 2
+                                    let halfWidth = tooltipMaxWidth / 2
+                                    let clampedCenterX = min(max(barCenterX, halfWidth), geometry.size.width - halfWidth)
+                                    Color.clear
+                                        .frame(width: 1, height: 1)
+                                        .overlay(alignment: .bottom) {
+                                            tooltipOverlay(bar: bar)
+                                                .fixedSize()
+                                                .padding(.bottom, 8)
+                                        }
+                                        .offset(x: clampedCenterX - 0.5)
+                                        .allowsHitTesting(false)
+                                }
+                            }
                         }
                         .frame(height: barHeight)
 
@@ -149,7 +161,6 @@ struct HourlyChartView: View {
         .background(.ultraThinMaterial)
         .cornerRadius(6)
         .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
-        .offset(y: -barHeight - 8)
     }
 
     private var legend: some View {
